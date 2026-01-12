@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LangGraphの概要と特徴</title>
+    <style>
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            color: #333;
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #2980b9;
+            margin-top: 30px;
+        }
+        h3 {
+            color: #3498db;
+        }
+        code {
+            background-color: #f8f8f8;
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-family: Consolas, Monaco, 'Andale Mono', monospace;
+        }
+        pre {
+            background-color: #f8f8f8;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+        .highlight {
+            background-color: #ffffcc;
+            padding: 2px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .note {
+            background-color: #e7f4ff;
+            border-left: 4px solid #3498db;
+            padding: 15px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>LangGraphの概要と特徴</h1>
+
+    <h2>LangGraphとは</h2>
+    <p>
+        LangGraphは、LangChainエコシステム内の拡張ライブラリで、複雑な処理の流れをグラフとして設計して制御できるフレームワークです。
+        特に<strong>状態を持つマルチエージェント・ステートフルな処理</strong>を構築するのに適しています。
+        一言でいえば「<strong>ステートマシン（状態遷移）管理ライブラリ</strong>」と言えます。
+    </p>
+
+    <div class="note">
+        LangGraphはMITライセンスのオープンソースとして提供されており、開発者は自由に利用できます。
+        また、「LangGraph Platform」という商用プラットフォームも2025年5月に一般提供開始予定で、
+        スケーラブルな展開や管理、UIによるワークフロー設計などを支援する機能が提供される予定です。
+    </div>
+
+    <h2>LangGraphの特徴</h2>
+    <ul>
+        <li><strong>グラフ構造を採用</strong>: ループや分岐・条件付きフローが可能で、より柔軟で非線形的なワークフローに対応</li>
+        <li><strong>状態管理の柔軟性</strong>: 各ノードがグローバルな「state」にアクセス・変更可能で、会話の継続や途中再開にも対応</li>
+        <li><strong>複雑なワークフロー</strong>: 状態の保持、分岐・ループ、複数エージェントの協調など、複雑かつ動的な処理フローの構築が可能</li>
+        <li><strong>視覚的・ローコード設計</strong>: 低コード／視覚的にフローを設計できる機能も提供</li>
+    </ul>
+
+    <h2>LangChainとの違い</h2>
+    <p>LangChainとLangGraphの主な違いは、「処理フローの構造」と「状態管理の柔軟性」にあります。</p>
+
+    <table>
+        <tr>
+            <th>比較項目</th>
+            <th>LangChain（チェーン型）</th>
+            <th>LangGraph（グラフ型）</th>
+        </tr>
+        <tr>
+            <td>構造</td>
+            <td>シーケンシャル（DAG: 有向非巡回グラフ）</td>
+            <td>グラフ構造（分岐・ループ・状態管理）</td>
+        </tr>
+        <tr>
+            <td>状態管理</td>
+            <td>メモリはあるが限定的</td>
+            <td>ステートフルな状態管理、永続化、再開、マルチエージェントに対応</td>
+        </tr>
+        <tr>
+            <td>UI／開発性</td>
+            <td>コーディング中心</td>
+            <td>ローコード／視覚設計に対応するオプションあり（LangGraph Platform）</td>
+        </tr>
+        <tr>
+            <td>適用例</td>
+            <td>文書処理、単純なエージェント、RAG</td>
+            <td>仮想アシスタント、AIエージェントの協調、多段階業務ワークフロー</td>
+        </tr>
+    </table>
+
+    <h2>LangGraphの基本コンポーネント</h2>
+    <ul>
+        <li><strong>State</strong>: ワークフロー内の状態を定義</li>
+        <li><strong>Node</strong>: 各ステップでの処理を定義</li>
+        <li><strong>Edge</strong>: ノード間の接続関係を定義</li>
+        <li><strong>Graph</strong>: ノードとエッジから構成されるワークフロー全体</li>
+        <li><strong>条件付きエッジ</strong>: 条件に基づいて処理フローを分岐させる仕組み</li>
+    </ul>
+
+    <h2>LangGraphを使った簡単なワークフロー例</h2>
+    <pre>
+# 基本的なステートマシンの例
+from langgraph.graph import StateGraph
+from langchain_core.runnables import RunnableConfig
+from typing_extensions import TypedDict
+
+# Stateの定義
+class State(TypedDict):
+    value: str
+
+# Nodeの定義（ステップごとの処理）
+def node(state: State, config: RunnableConfig):
+    return {"value": "Step 1 完了"}
+
+def node2(state: State, config: RunnableConfig):
+    return {"value": "Step 2 完了"}
+
+# Graphの作成
+graph_builder = StateGraph(State)
+
+# Nodeを追加
+graph_builder.add_node("node", node)
+graph_builder.add_node("node2", node2)
+
+# Edgeの定義（node → node2）
+graph_builder.add_edge("node", "node2")
+
+# 始点・終点の設定
+graph_builder.set_entry_point("node")
+graph_builder.set_finish_point("node2")
+
+# Graphのコンパイル
+graph = graph_builder.compile()
+
+# 実行
+result = graph.invoke({"value": ""})
+print(result)
+    </pre>
+
+    <h2>条件分岐を含むワークフロー例</h2>
+    <pre>
+import random
+from typing import Literal
+
+# 分岐のルールを定義
+def routing(state: State, config: RunnableConfig) -> Literal["node2", "node3"]:
+    if random.randint(0, 1) == 0:
+        return "node2"
+    return "node3"
+
+def node2(state: State, config: RunnableConfig):
+    return {"value": "Path A"}
+
+def node3(state: State, config: RunnableConfig):
+    return {"value": "Path B"}
+
+# グラフ作成
+graph_builder.add_node("node2", node2)
+graph_builder.add_node("node3", node3)
+
+# 分岐を追加
+graph_builder.add_conditional_edges("node", routing)
+    </pre>
+
+    <h2>使用に適したケース</h2>
+    <ul>
+        <li><strong>マルチターン会話システム</strong>: 状態追跡とコンテキスト管理が必要なシステム</li>
+        <li><strong>エージェントシステム</strong>: 強力な状態管理と制御フローが必要なシステム</li>
+        <li><strong>複数エージェントの協調</strong>: 複数のAIエージェントが連携して問題解決するシステム</li>
+        <li><strong>複雑な意思決定プロセス</strong>: 条件分岐やループを含む非線形的なワークフロー</li>
+    </ul>
+
+    <h2>まとめ</h2>
+    <p>
+        LangGraphは、LangChainの拡張として、より複雑でステートフルなAIワークフローを構築するためのライブラリです。
+        シンプルで直線的な処理にはLangChainが適していますが、状態の保持、分岐・ループ、複数エージェントの協調などの
+        複雑かつ動的な処理フローにはLangGraphが強みを発揮します。
+    </p>
+    <p>
+        実際のシステム開発では、LangChainのコンポーネント（ドキュメントローダー、ベクトルストアコネクター、モデルインターフェースなど）を
+        ベースにして、その上でLangGraphを使って状態管理やフロー制御を行うという組み合わせも一般的です。
+    </p>
+</body>
+</html>
